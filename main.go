@@ -12,14 +12,16 @@ func main() {
 	}))
 
 	svc := sqs.New(sess)
-	result, err := svc.ListQueues(nil)
+	qname := "test-queue"
+	res, err := svc.CreateQueue(&sqs.CreateQueueInput{QueueName: &qname})
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	url := *result.QueueUrls[0]
+
+	url := res.QueueUrl
 	for {
 		output, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
-			QueueUrl: &url,
+			QueueUrl: url,
 		})
 		if err != nil {
 			logrus.Error(err)
@@ -28,7 +30,7 @@ func main() {
 			logrus.Info(*message.Body)
 			_, err = svc.DeleteMessage(&sqs.DeleteMessageInput{
 				ReceiptHandle: message.ReceiptHandle,
-				QueueUrl:      &url,
+				QueueUrl:      url,
 			})
 			if err != nil {
 				logrus.Error(err)

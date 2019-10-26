@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/sirupsen/logrus"
 )
@@ -11,18 +13,24 @@ func main() {
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 
-	svc := sqs.New(sess)
+	Queusvc := sqs.New(sess)
+	DBsvc := dynamodb.New(sess)
+	tablename := "messages"
 	qname := "test-queue"
-	res, err := svc.CreateQueue(&sqs.CreateQueueInput{
+	res, err := Queusvc.CreateQueue(&sqs.CreateQueueInput{
 		QueueName: &qname,
 	})
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
+	input := &dynamodb.CreateTableInput{
+		TableName: aws.String(tablename),
+	}
+	_, err = DBsvc.CreateTable(input)
 	url := res.QueueUrl
 	for {
-		output, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
+		output, err := Queusvc.ReceiveMessage(&sqs.ReceiveMessageInput{
 			QueueUrl: url,
 		})
 		if err != nil {
@@ -30,7 +38,7 @@ func main() {
 		}
 		for _, message := range output.Messages {
 			logrus.Info(*message.Body)
-			_, err = svc.DeleteMessage(&sqs.DeleteMessageInput{
+			_, err = Queusvc.DeleteMessage(&sqs.DeleteMessageInput{
 				ReceiptHandle: message.ReceiptHandle,
 				QueueUrl:      url,
 			})

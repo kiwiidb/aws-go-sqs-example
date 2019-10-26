@@ -13,7 +13,9 @@ func main() {
 
 	svc := sqs.New(sess)
 	qname := "test-queue"
-	res, err := svc.CreateQueue(&sqs.CreateQueueInput{QueueName: &qname})
+	res, err := svc.CreateQueue(&sqs.CreateQueueInput{
+		QueueName: &qname,
+	})
 	if err != nil {
 		logrus.Fatal(err)
 	}
